@@ -2,6 +2,7 @@ package com.paglima.monster.view.rest.controller;
 
 import com.paglima.monster.configuration.orika.mapper.OMapper;
 import com.paglima.monster.domain.Brand;
+import com.paglima.monster.domain.Cep;
 import com.paglima.monster.domain.Sku;
 import com.paglima.monster.persistence.mongo.dao.SkuMongoDao;
 import com.paglima.monster.view.rest.model.request.SkuUpdateRequest;
@@ -12,9 +13,13 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.RestTemplate;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+
+import java.net.URI;
 
 import static com.paglima.monster.util.AllowHeaderUtil.allows;
 
@@ -26,11 +31,13 @@ public class MonsterController {
 
     private final OMapper mapper;
     private final SkuMongoDao skuMongoDao;
+    private final RestTemplate restTemplate;
 
     @Autowired
-    public MonsterController(OMapper mapper, SkuMongoDao skuMongoDao) {
+    public MonsterController(OMapper mapper, SkuMongoDao skuMongoDao, RestTemplate restTemplate) {
         this.mapper = mapper;
         this.skuMongoDao = skuMongoDao;
+        this.restTemplate = restTemplate;
     }
 
     @SuppressWarnings("rawtypes")
@@ -51,5 +58,10 @@ public class MonsterController {
     public SkuResponse find(@PathVariable("skuId") @NotNull Long skuId, @RequestParam(value = "brand") @NotNull Brand brand) throws Exception {
         Sku skuFound = skuMongoDao.findBySkuIdAndBrand(skuId, brand);
         return mapper.map(skuFound, SkuResponse.class);
+    }
+
+    @GetMapping(value = "/cep/{cep}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public Cep find(@PathVariable("cep") @NotNull Long cep) throws Exception {
+        return restTemplate.getForObject(URI.create("http://api.postmon.com.br/v1/cep/" + cep), Cep.class);
     }
 }
